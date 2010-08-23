@@ -1,55 +1,154 @@
-Data-Dmap
+NAME
+    Data::Dmap - just like map, but on deep data structures
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+VERSION
+    Version 0.04
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+SYNOPSIS
+    This module provides the single function "dmap" which carries out a
+    "map"-like operation on deep data structures.
 
+        use Data::Dmap;
 
-INSTALLATION
+        my $foo = {
+            cars => [ 'ford', 'opel', 'BMW' ],
+            birds => [ 'cuckatoo', 'ostrich', 'frigate' ],
+            handler => sub { print "barf\n" }
+        };
 
-To install this module, run the following commands:
+        # This removes all keys named 'cars'    
+        my($bar) = dmap { delete $_->{cars} if ref eq 'HASH'; $_ } $foo;
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+        # This replaces arrays with the number of elements they contains
+        my($other) = dmap { $_ = scalar @$_ if ref eq 'ARRAY'; $_ } $foo;
 
-SUPPORT AND DOCUMENTATION
+        use Data::Dumper;
+        print Dumper $other;
+        #
+        # Prints
+        # {
+        #    birds => 3,
+        #    handler => sub { "DUMMY" }
+        # }
+        # (Data::Dumper doesn't dump subs)
 
-After installing, you can find documentation for this module with the
-perldoc command.
+        $other->{handler}->();
+        # Prints
+        # barf
 
-    perldoc Data::Dmap
+EXPORT
+    "dmap" - the dmap function that does deep in-place mapping
 
-You can also look for information at:
+SUBROUTINES/METHODS
+  "dmap"
+    This function works like "map" - it takes an expression followed by a
+    list, evaluates the expression on each member of the list and returns
+    the result.
 
-    RT, CPAN's request tracker
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Data-Dmap
+    The only difference is that any references returned by the expression
+    will also be traversed and passed to the expression once again, thus
+    making it possible to make deep traversal of any data structure.
 
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/Data-Dmap
+    Objects (references blessed to something) are just traversed as if they
+    weren't blessed.
 
-    CPAN Ratings
-        http://cpanratings.perl.org/d/Data-Dmap
+   Examples
+    Delete all hash references
 
-    Search CPAN
-        http://search.cpan.org/dist/Data-Dmap/
+        use Data::Dmap;
+        use Data::Dump 'pp';
+        
+    pp dmap { return $_ unless ref eq 'HASH'; return; } 1, 'foo', [ { a => 1 }, 2];
+        
+    # Prints:
+        # (1, "foo", [2])
 
+    Delete every odd number
 
+        use Data::Dmap;
+        use Data::Dump 'pp';
+        
+    pp dmap { return if $_ % 2; $_ } [ 1 .. 10 ];
+
+        # Prints:
+        # [2, 4, 6, 8, 10]
+
+    Replace all hash refs with some $object of class "thingy".
+
+        use Data::Dmap;
+        use Data::Dump 'pp';
+        
+    pp dmap { return bless $_, 'thingy' if ref eq 'HASH'; $_ } [ 1, "hello", { a => 1 } ];
+
+    Because the output from the expression is being traversed, you can use
+    "dmap" to generate data structures:
+
+        use Data::Dmap;
+        use Data::Dump 'pp';
+        
+    my $height = 3;
+        pp dmap { if(ref eq 'HASH' and $height--) { $_->{a} = {height => $height} } $_ } {};
+        
+    # Prints:
+        # {
+        #     a => {
+        #         a => {
+        #             a => { 
+        #                 height => 0
+        #             },
+        #             height => 1
+        #         },
+        #         height => 2
+        #     }
+        # }
+        # (My own formatting above.)
+
+AUTHOR
+    Michael Zedeler, "<michael@zedeler.dk>"
+
+BUGS
+    If you find a bug, please consider helping to fix the bug by doing this:
+
+    *   Fork "Data::Dmap" from <http://github.com/mzedeler/Data-Dmap>
+
+    *   Write a test case in the "t" directory, commit and push it.
+
+    *   Fix the bug or (if you don't know how to fix it), report the bug
+
+    Bugs and feature requests can be reported through the web interface at
+    <http://github.com/mzedeler/Data-Dmap/issues>. I may not be notified, so
+    send me a mail too.
+
+SUPPORT
+    You can find documentation for this module with the perldoc command.
+
+        perldoc Data::Dmap
+
+    You can also look for information at:
+
+    *   The github issue tracker
+
+        <http://github.com/mzedeler/Data-Dmap/issues>
+
+    *   AnnoCPAN: Annotated CPAN documentation
+
+        <http://annocpan.org/dist/Data-Dmap>
+
+    *   CPAN Ratings
+
+        <http://cpanratings.perl.org/d/Data-Dmap>
+
+    *   Search CPAN
+
+        <http://search.cpan.org/dist/Data-Dmap/>
+
+ACKNOWLEDGEMENTS
 LICENSE AND COPYRIGHT
+    Copyright 2010 Michael Zedeler.
 
-Copyright (C) 2010 "Michael Zedeler"
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of either: the GNU General Public License as published
+    by the Free Software Foundation; or the Artistic License.
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
+    See http://dev.perl.org/licenses/ for more information.
 
