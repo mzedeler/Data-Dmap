@@ -2,11 +2,12 @@ package Data::Dmap;
 
 use warnings;
 use strict;
-use feature 'switch';
 require v5.10;
-use Scalar::Util qw{ reftype refaddr };
+use feature 'switch';
+use Carp 'croak';
 use Exporter 'import';
 our @EXPORT = qw{ dmap };
+use Scalar::Util qw{ reftype refaddr };
 
 =head1 NAME
 
@@ -20,7 +21,6 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
 
 This module provides the single function C<dmap> which carries out a
@@ -30,15 +30,35 @@ C<map>-like operation on deep data structures.
 
     my $foo = {
         cars => [ 'ford', 'opel', 'BMW' ],
-        birds => [ 'cuckatoo', 'ostrich', 'frigate' ]
-        handlers => 
-    ...
+        birds => [ 'cuckatoo', 'ostrich', 'frigate' ],
+        handler => sub { print "barf\n" }
+    };
+
+    # This removes all keys named 'cars'    
+    my($bar) = dmap { delete $_->{cars} if ref eq 'HASH'; $_ } $foo;
+
+    # This replaces arrays with the number of elements they contains
+    my($other) = dmap { $_ = scalar @$_ if ref eq 'ARRAY'; $_ } $foo;
+
+    use Data::Dumper;
+    print Dumper $other;
+    #
+    # Prints
+    # {
+    #    birds => 3,
+    #    handler => sub { "DUMMY" }
+    # }
+    # (Data::Dumper doesn't dump subs)
+
+    $other->{handler}->();
+    # Prints
+    # barf
 
 =head1 EXPORT
 
 =over
 
-=item C<dmap> - the dmap function that does deep mapping for you
+=item C<dmap> - the dmap function that does deep in-place mapping
 
 =back
 
@@ -78,23 +98,40 @@ sub _dmap {
                 foreach my $val (@mapped) {
                     given(reftype $val) {
                         when('HASH') {
-                            push @result, { map {$_ => _dmap($cache, $callback, $val->{$_})} keys %$val };
+                            for(keys %$val) {
+                                my @res = _dmap($cache, $callback, $val->{$_});
+                                croak 'Multi value return in hash value assignment'
+                                    if @res > 1;
+                                $val->{$_} = $res[0] if @res;
+                            }
+                            push @result, $val;
                         }
                         when('ARRAY') {
-                            push @result, [ map { _dmap($cache, $callback, $_) } @$val ];
+                            for(0 .. $#$val) {
+                                if(exists $val->[$_]) {
+                                    # TODO Use splice to allow multi-value returns
+                                    my @res = _dmap($cache, $callback, $val->[$_]);
+                                    croak 'Multi value return in array single value assignment'
+                                        if @res > 1;
+                                    $val->[$_] = $res[0] if @res;
+                                }
+                            }
+                            push @result, $val;
                         }
                         when('SCALAR') {
-                            push @result, _dmap($cache, $callback, $val);
+                            my @res = _dmap($cache, $callback, $$val);
+                            croak 'Multi value return in single value assignment'
+                                if @res > 1;
+                            $$val = $res[0] if @res;
                         }
                         default {
                             push @result, $val;
                         }
                     }
                 }
-                print "Result: ", join(', ', @result), "\n";
                 _store_cache($cache, $orig_ref, @result);
             } else {
-                _get_cache($cache, $_);
+                push @result, _get_cache($cache, $_);
             }
         } else {
             @result = $callback->($_);
@@ -103,6 +140,7 @@ sub _dmap {
     } @_
 }
 
+# Stub that inserts empty map cache
 sub dmap(&@) { _dmap({}, @_) }
 
 =head1 AUTHOR
@@ -111,9 +149,21 @@ Michael Zedeler, C<< <"michael@zedeler.dk"> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-data-dmap at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Data-Dmap>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+If you find a bug, please consider helping to fix the bug by doing this:
+
+=over
+
+=item Fork C<Data::Dmap> from L<http://github.com/mzedeler/Data-Dmap>
+
+=item Write a test case in the C<t> directory, commit and push it.
+
+=item Fix the bug or (if you don't know how to fix it), report the bug
+
+=back
+
+Bugs and feature requests can be reported through the web interface at
+L<http://github.com/mzedeler/Data-Dmap/issues>. I may not be notified, so send
+me a mail too.
 
 =head1 SUPPORT
 
@@ -121,14 +171,13 @@ You can find documentation for this module with the perldoc command.
 
     perldoc Data::Dmap
 
-
 You can also look for information at:
 
 =over 4
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Data-Dmap>
+L<http://github.com/mzedeler/Data-Dmap/issues>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 

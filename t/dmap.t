@@ -41,4 +41,13 @@ for(keys %types) {
     }
 }
 
+{
+    my $count = 0;
+    my($result) = dmap { if(ref eq 'ARRAY') {$count++; $_ = $object; } $_ } { a => $array, b => $array, c => $array };
+    is($count, 1, 'Whitebox test: repeated replacements of same reference are cached.');
+    for(qw{a b c}) {
+        is(refaddr($result->{$_}), refaddr($object), 'Map from array to object returns the same object every time.');
+    }
+}
+
 done_testing;
