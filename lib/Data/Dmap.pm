@@ -51,8 +51,7 @@ C<map>-like operation on deep data structures.
 sub _store_cache {
     my $cache  = shift;
     my $ref    = shift;
-    my @values = @_;
-    $cache->{refaddr($ref)} = [@values];
+    $cache->{refaddr($ref)} = [@_];
 }
 
 sub _get_cache {
@@ -75,28 +74,25 @@ sub _dmap {
         if(ref) {
             my $orig_ref = $_;
             if(not _has_cache($cache, $orig_ref)) {
-                my @result = eval { $callback->($orig_ref) };
-                foreach my $ref (@result) {
-                    my $addr = refaddr $ref;
-                    my $type = reftype $ref;
-                    given(reftype $_) {
+                my @mapped = $callback->($orig_ref);
+                foreach my $val (@mapped) {
+                    given(reftype $val) {
                         when('HASH') {
-                            for(keys %$ref) {
-                                _dmap($cache, $callback, $ref->{$_});
-                            }
+                            push @result, { map {$_ => _dmap($cache, $callback, $val->{$_})} keys %$val };
                         }
                         when('ARRAY') {
-                            map { $_ => _dmap($cache, $callback, $_) } @$ref;
+                            push @result, [ map { _dmap($cache, $callback, $_) } @$val ];
                         }
                         when('SCALAR') {
-                            _dmap($cache, $callback, $ref);
+                            push @result, _dmap($cache, $callback, $val);
                         }
                         default {
-                            @result = ($orig_ref);
+                            push @result, $val;
                         }
                     }
-                    _store_cache($cache, $orig_ref, @result);
                 }
+                print "Result: ", join(', ', @result), "\n";
+                _store_cache($cache, $orig_ref, @result);
             } else {
                 _get_cache($cache, $_);
             }
