@@ -72,10 +72,4 @@ for(keys %types) {
     is($$result, 2, 'Replacing value pointed to by scalar ref.');
 }
 
-{
-    use Data::Dumper;
-    my($result) = dmap { return if $_ %2; $_ } [ 1 .. 10 ];
-    diag Dumper $result;
-}
-
 done_testing;
