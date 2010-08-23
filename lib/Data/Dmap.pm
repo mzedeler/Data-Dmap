@@ -15,11 +15,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -219,7 +219,7 @@ sub dmap(&@) { _dmap({}, @_) }
 
 =head1 AUTHOR
 
-Michael Zedeler, C<< <"michael@zedeler.dk"> >>
+Michael Zedeler, C<< <michael@zedeler.dk> >>
 
 =head1 BUGS
 
@@ -227,11 +227,11 @@ If you find a bug, please consider helping to fix the bug by doing this:
 
 =over
 
-=item Fork C<Data::Dmap> from L<http://github.com/mzedeler/Data-Dmap>
+=item * Fork C<Data::Dmap> from L<http://github.com/mzedeler/Data-Dmap>
 
-=item Write a test case in the C<t> directory, commit and push it.
+=item * Write a test case in the C<t> directory, commit and push it.
 
-=item Fix the bug or (if you don't know how to fix it), report the bug
+=item * Fix the bug or (if you don't know how to fix it), report the bug
 
 =back
 
@@ -249,7 +249,7 @@ You can also look for information at:
 
 =over 4
 
-=item * RT: CPAN's request tracker
+=item * The github issue tracker
 
 L<http://github.com/mzedeler/Data-Dmap/issues>
 
@@ -273,7 +273,7 @@ L<http://search.cpan.org/dist/Data-Dmap/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010 "Michael Zedeler".
+Copyright 2010 Michael Zedeler.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
