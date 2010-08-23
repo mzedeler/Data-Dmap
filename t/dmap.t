@@ -50,4 +50,32 @@ for(keys %types) {
     }
 }
 
+{
+    my($result) = dmap { $_ = 2 if not ref; $_ } { thingy => 1 };
+    is($result->{thingy}, 2, 'Replacing hash value.');
+}
+
+{
+    my($result) = dmap { $_ = 2 if not ref; $_ } [ 1 ];
+    is($result->[0], 2, 'Replacing array value.');
+}
+
+{
+    my $a = 1;
+    my($result) = dmap { $_ = 2 if ref eq 'SCALAR'; $_ } \$a;
+    is($result, 2, 'Replacing SCALAR ref.');
+}
+
+{
+    my $a = 1;
+    my($result) = dmap { $_ = 2 if not ref; $_ } \$a;
+    is($$result, 2, 'Replacing value pointed to by scalar ref.');
+}
+
+{
+    use Data::Dumper;
+    my($result) = dmap { return if $_ %2; $_ } [ 1 .. 10 ];
+    diag Dumper $result;
+}
+
 done_testing;

@@ -15,11 +15,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -66,6 +66,69 @@ C<map>-like operation on deep data structures.
 
 =head2 C<dmap>
 
+This function works like C<map> - it takes an expression followed by a list,
+evaluates the expression on each member of the list and returns the result.
+
+The only difference is that any references returned by the expression will
+also be traversed and passed to the expression once again, thus making it
+possible to make deep traversal of any data structure.
+
+Objects (references blessed to something) are just traversed as if they
+weren't blessed.
+
+=head3 Examples
+
+Delete all hash references
+
+    use Data::Dmap;
+    use Data::Dump 'pp';
+    
+    pp dmap { return $_ unless ref eq 'HASH'; return; } 1, 'foo', [ { a => 1 }, 2];
+    
+    # Prints:
+    # (1, "foo", [2])
+    
+Delete every odd number
+
+    use Data::Dmap;
+    use Data::Dump 'pp';
+    
+    pp dmap { return if $_ % 2; $_ } [ 1 .. 10 ];
+
+    # Prints:
+    # [2, 4, 6, 8, 10]
+
+Replace all hash refs with some C<$object> of class C<thingy>.
+
+    use Data::Dmap;
+    use Data::Dump 'pp';
+    
+    pp dmap { return bless $_, 'thingy' if ref eq 'HASH'; $_ } [ 1, "hello", { a => 1 } ];
+
+Because the output from the expression is being traversed, you can use C<dmap> to generate
+data structures:
+
+    use Data::Dmap;
+    use Data::Dump 'pp';
+    
+    my $height = 3;
+    pp dmap { if(ref eq 'HASH' and $height--) { $_->{a} = {height => $height} } $_ } {};
+    
+    # Prints:
+    # {
+    #     a => {
+    #         a => {
+    #             a => { 
+    #                 height => 0
+    #             },
+    #             height => 1
+    #         },
+    #         height => 2
+    #     }
+    # }
+    # (My own formatting above.)
+               
+                
 =cut
 
 sub _store_cache {
@@ -102,19 +165,29 @@ sub _dmap {
                                 my @res = _dmap($cache, $callback, $val->{$_});
                                 croak 'Multi value return in hash value assignment'
                                     if @res > 1;
-                                $val->{$_} = $res[0] if @res;
+                                if(@res) {
+                                    $val->{$_} = $res[0];
+                                } else {
+                                    delete $val->{$_};
+                                }
                             }
                             push @result, $val;
                         }
                         when('ARRAY') {
-                            for(0 .. $#$val) {
-                                if(exists $val->[$_]) {
+                            my $i = 0;
+                            while($i <= $#$val) {
+                                if(exists $val->[$i]) {
                                     # TODO Use splice to allow multi-value returns
-                                    my @res = _dmap($cache, $callback, $val->[$_]);
+                                    my @res = _dmap($cache, $callback, $val->[$i]);
                                     croak 'Multi value return in array single value assignment'
                                         if @res > 1;
-                                    $val->[$_] = $res[0] if @res;
+                                    if(@res) {
+                                        $val->[$i] = $res[0];
+                                    } else {
+                                        print splice @$val, $i, 1;
+                                    }
                                 }
+                                $i++;
                             }
                             push @result, $val;
                         }
@@ -123,6 +196,7 @@ sub _dmap {
                             croak 'Multi value return in single value assignment'
                                 if @res > 1;
                             $$val = $res[0] if @res;
+                            push @result, $val;
                         }
                         default {
                             push @result, $val;
