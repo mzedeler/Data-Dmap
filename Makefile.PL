@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use ExtUtils::MakeMaker;
+use 5.010;
 
 WriteMakefile(
     NAME                => 'Data::Dmap',
