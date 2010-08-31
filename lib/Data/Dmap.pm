@@ -7,7 +7,9 @@ use feature 'switch';
 use Carp 'croak';
 use Exporter 'import';
 our @EXPORT = qw{ dmap };
+our @EXPORT_OK = qw{ cut };
 use Scalar::Util qw{ reftype refaddr };
+use Try::Tiny;
 
 =head1 NAME
 
@@ -15,11 +17,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -157,49 +159,62 @@ sub _dmap {
         if(ref) {
             my $orig_ref = $_;
             if(not _has_cache($cache, $orig_ref)) {
-                my @mapped = $callback->($orig_ref);
-                foreach my $val (@mapped) {
-                    given(reftype $val) {
-                        when('HASH') {
-                            for(keys %$val) {
-                                my @res = _dmap($cache, $callback, $val->{$_});
-                                croak 'Multi value return in hash value assignment'
-                                    if @res > 1;
-                                if(@res) {
-                                    $val->{$_} = $res[0];
-                                } else {
-                                    delete $val->{$_};
-                                }
-                            }
-                            push @result, $val;
-                        }
-                        when('ARRAY') {
-                            my $i = 0;
-                            while($i <= $#$val) {
-                                if(exists $val->[$i]) {
-                                    # TODO Use splice to allow multi-value returns
-                                    my @res = _dmap($cache, $callback, $val->[$i]);
-                                    croak 'Multi value return in array single value assignment'
+                my $recurse = 1;
+                my @mapped;
+                try {
+                    @mapped = $callback->($orig_ref);
+                } catch {
+                    if(ref eq 'Data::Dmap::Cut') {
+                        $recurse = 0;
+                        @result = @$_;
+                    } else {
+                        die $_
+                    }
+                };
+                if($recurse) {
+                    foreach my $val (@mapped) {
+                        given(reftype $val) {
+                            when('HASH') {
+                                for(keys %$val) {
+                                    my @res = _dmap($cache, $callback, $val->{$_});
+                                    croak 'Multi value return in hash value assignment'
                                         if @res > 1;
                                     if(@res) {
-                                        $val->[$i] = $res[0];
+                                        $val->{$_} = $res[0];
                                     } else {
-                                        print splice @$val, $i, 1;
+                                        delete $val->{$_};
                                     }
                                 }
-                                $i++;
+                                push @result, $val;
                             }
-                            push @result, $val;
-                        }
-                        when('SCALAR') {
-                            my @res = _dmap($cache, $callback, $$val);
-                            croak 'Multi value return in single value assignment'
-                                if @res > 1;
-                            $$val = $res[0] if @res;
-                            push @result, $val;
-                        }
-                        default {
-                            push @result, $val;
+                            when('ARRAY') {
+                                my $i = 0;
+                                while($i <= $#$val) {
+                                    if(exists $val->[$i]) {
+                                        # TODO Use splice to allow multi-value returns
+                                        my @res = _dmap($cache, $callback, $val->[$i]);
+                                        croak 'Multi value return in array single value assignment'
+                                            if @res > 1;
+                                        if(@res) {
+                                            $val->[$i] = $res[0];
+                                        } else {
+                                            print splice @$val, $i, 1;
+                                        }
+                                    }
+                                    $i++;
+                                }
+                                push @result, $val;
+                            }
+                            when('SCALAR') {
+                                my @res = _dmap($cache, $callback, $$val);
+                                croak 'Multi value return in single value assignment'
+                                    if @res > 1;
+                                $$val = $res[0] if @res;
+                                push @result, $val;
+                            }
+                            default {
+                                push @result, $val;
+                            }
                         }
                     }
                 }
@@ -213,6 +228,8 @@ sub _dmap {
         @result;
     } @_
 }
+
+sub cut { die bless [@_], 'Data::Dmap::Cut' }
 
 # Stub that inserts empty map cache
 sub dmap(&@) { _dmap({}, @_) }
