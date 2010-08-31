@@ -4,10 +4,10 @@ use warnings;
 use strict;
 require v5.10;
 use feature 'switch';
-use Carp 'croak';
 use Exporter 'import';
 our @EXPORT = qw{ dmap };
 our @EXPORT_OK = qw{ cut };
+use Carp 'croak';
 use Scalar::Util qw{ reftype refaddr };
 use Try::Tiny;
 
@@ -61,6 +61,8 @@ C<map>-like operation on deep data structures.
 =over
 
 =item C<dmap> - the dmap function that does deep in-place mapping
+
+=item C<cut> - a function for stopping recursion.
 
 =back
 
@@ -129,7 +131,33 @@ data structures:
     #     }
     # }
     # (My own formatting above.)
-               
+
+=head2 C<cut>
+
+The C<cut> routine stops recursion at any point and returns any data as it is
+in place of the current node.
+
+=head3 Examples
+
+    use Data::Dmap 'cut';
+    use Data::Dump 'pp';
+    
+    my $deep = {
+        level => 1,
+        data  => {
+            level => 2,
+            data => {
+                level => 3
+            }
+        }
+    };
+    
+    pp dmap { cut('stop') if ref eq 'HASH' and $_->{level} == 2} $deep;
+
+    # Prints:
+    #
+    # { data => { data => "stop", level => 2 }, level => 1 }
+                       
                 
 =cut
 
