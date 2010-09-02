@@ -313,8 +313,22 @@ L<http://search.cpan.org/dist/Data-Dmap/>
 =back
 
 
-=head1 ACKNOWLEDGEMENTS
+=head1 SEE ALSO
 
+L<Data::Rmap>, L<Data::Visitor>, L<Data::Transformer>, L<Data::Visitor>, L<Data::Walk>.
+
+=head1 TODO
+
+=over1
+
+=item Some kind of option making it possible to traverse objects with L<Class::MOP>
+metaclasses, so we can avoid breaking encapsulation.
+
+=item Options to provide more information about the current node to the
+callback handler, such as path, depth and data types. Should not affect
+performance if not used.
+
+=back
 
 =head1 LICENSE AND COPYRIGHT
 
