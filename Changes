@@ -1,5 +1,9 @@
 Revision history for Data-Dmap
 
+0.06    Fixing README (duh!).
+
+0.05    Bugfixes. Introduced cut().
+
 0.01    Date/time
         First version, released on an unsuspecting world.
 

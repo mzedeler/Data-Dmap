@@ -17,11 +17,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06.
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 =head1 SYNOPSIS
 
@@ -56,17 +56,17 @@ C<map>-like operation on deep data structures.
     # Prints
     # barf
 
-=head1 EXPORT
+=head1 EXPORTS
 
 =over
 
-=item C<dmap> - the dmap function that does deep in-place mapping
+=item C<dmap> (always exported) - the dmap function that does deep in-place mapping
 
-=item C<cut> - a function for stopping recursion.
+=item C<cut> (optional) - a function for stopping recursion.
 
 =back
 
-=head1 SUBROUTINES/METHODS
+=head1 SUBROUTINES
 
 =head2 C<dmap>
 
@@ -319,7 +319,7 @@ L<Data::Rmap>, L<Data::Visitor>, L<Data::Transformer>, L<Data::Visitor>, L<Data:
 
 =head1 TODO
 
-=over1
+=over
 
 =item Some kind of option making it possible to traverse objects with L<Class::MOP>
 metaclasses, so we can avoid breaking encapsulation.
