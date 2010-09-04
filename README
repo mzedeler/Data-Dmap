@@ -81,6 +81,21 @@ SUBROUTINES
         use Data::Dump 'pp';
         
     pp dmap { return bless $_, 'thingy' if ref eq 'HASH'; $_ } [ 1, "hello", { a => 1 } ];
+        
+    # Prints:
+        # [1, "hello", bless({ a => 1 }, "thingy")]
+
+    "dmap" understands what you want, if you return nothing (as opposed to
+    "undef") when evaluating the expression for a hash key:
+
+        use Data::Dmap;
+        use Data::Dump 'pp;
+
+        my $characters = { main => 'pooh', secondary => 'piglet' };
+        pp dmap { return if $_ eq "piglet"; $_ } $characters;
+        
+    # Prints:
+        # { main => "pooh" }
 
     Because the output from the expression is being traversed, you can use
     "dmap" to generate data structures:
