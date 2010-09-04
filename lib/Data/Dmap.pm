@@ -17,11 +17,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.06.
+Version 0.07.
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 =head1 SYNOPSIS
 
@@ -226,7 +226,7 @@ sub _dmap {
                                         if(@res) {
                                             $val->[$i] = $res[0];
                                         } else {
-                                            print splice @$val, $i, 1;
+                                            splice @$val, $i, 1;
                                         }
                                     }
                                     $i++;

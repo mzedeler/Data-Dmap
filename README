@@ -2,7 +2,7 @@ NAME
     Data::Dmap - just like map, but on deep data structures
 
 VERSION
-    Version 0.06.
+    Version 0.07.
 
 SYNOPSIS
     This module provides the single function "dmap" which carries out a
