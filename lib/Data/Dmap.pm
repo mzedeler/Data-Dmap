@@ -17,11 +17,11 @@ Data::Dmap - just like map, but on deep data structures
 
 =head1 VERSION
 
-Version 0.07.
+Version 0.08.
 
 =cut
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 =head1 SYNOPSIS
 
@@ -252,7 +252,7 @@ sub _dmap {
                                 my @res = _dmap($cache, $callback, $$val);
                                 croak 'Multi value return in single value assignment'
                                     if @res > 1;
-                                $$val = $res[0] if @res;
+                                $$val = $res[0] if @res and $$val ne $res[0];
                                 push @result, $val;
                             }
                             default {
